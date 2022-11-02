@@ -1,26 +1,163 @@
-# Use the latest 2.1 version of CircleCI pipeline process engine.
-# See: https://circleci.com/docs/2.0/configuration-reference
 version: 2.1
+orbs:
+  ruby: circleci/ruby@1.1.2
+  heroku: circleci/heroku@1.2.3
 
-# Define a job to be invoked later in a workflow.
-# See: https://circleci.com/docs/2.0/configuration-reference/#jobs
 jobs:
-  say-hello:
-    # Specify the execution environment. You can specify an image from Dockerhub or use one of our Convenience Images from CircleCI's Developer Hub.
-    # See: https://circleci.com/docs/2.0/configuration-reference/#docker-machine-macos-windows-executor
+  build:
+    working_directory:  ~/video_share_app
     docker:
-      - image: cimg/base:stable
-    # Add steps to the job
-    # See: https://circleci.com/docs/2.0/configuration-reference/#steps
+      - image: circleci/ruby:2.7
+    steps:
+      - checkout:
+          path: ~/video_share_app
+                # - ruby/install-deps
+      - restore_cache:
+          name: Restore Gem Package Cache
+          keys:
+            v1-dependencies-{{ checksum "Gemfile.lock" }}-{{ checksum "yarn.lock" }}
+      - run:
+          name: Run jest tests
+          command: |
+             gem install bundler
+      - save_cache:
+          name: Save Gem Package Cache
+          paths:
+            - ./vendor/bundle
+          key: gem-v1-{{ arch }}-{{ checksum "Gemfile.lock" }}
+  jobs:
+    rspec:
+    parallelism: 3
+    docker:
+    - image: circleci/ruby:2.7.0-node-browsers
+      environment:
+          - BUNDLER_VERSION: 1.16.1
+          - RAILS_ENV: 'test'
+    - image: circleci/mysql:5.5
+      environment:
+          - MYSQL_ALLOW_EMPTY_PASSWORD: 'true'
+          - MYSQL_ROOT_HOST: '127.0.0.1'
     steps:
       - checkout
+      - restore_cache:
+          key: v1-bundle-{{ checksum "Gemfile.lock" }}
       - run:
-          name: "Say hello"
-          command: "echo Hello, World!"
+          name: install dependencies
+          command: |
+            gem install bundler -v 2.0.2
+            bundle install --jobs=4 --retry=3 --path vendor/bundle
+      - save_cache:
+          key: v1-bundle-{{ checksum "Gemfile.lock" }}
+          paths:
+            - ~/circleci-demo-workflows/vendor/bundle
+    
+  test:
+    docker:
+      - image: circleci/ruby:2.7
+      - image: circleci/mysql:5.5
+        environment:
+          MYSQL_ROOT_PASSWORD: password
+          MYSQL_DATABASE: test_db
+          MYSQL_USER: root
+    environment:
+      BUNDLE_JOBS: "3"
+      BUNDLE_RETRY: "3"
+      APP_DATABASE_HOST: "127.0.0.1"
+      RAILS_ENV: test
+    working_directory: ~/video_share_app
+    steps:
+      - checkout:
+          path: ~/video_share_app
+      - ruby/install-deps
+      - run:
+          name: Database setup
+          command: bundle exec rails db:migrate
+      - run:
+          name: test
+          command: bundle exec rake test
 
-# Invoke jobs via workflows
-# See: https://circleci.com/docs/2.0/configuration-reference/#workflows
+  deploy:
+    docker:
+      - image: circleci/ruby:2.7
+    steps:
+      - checkout
+      - setup_remote_docker:
+          version: 19.03.13
+      - heroku/install
+      - run:
+          name: heroku login
+          command: heroku container:login
+      - run:
+          name: push docker image
+          command: heroku container:push web -a $HEROKU_APP_NAME
+      - run:
+          name: release docker image
+          command: heroku container:release web -a $HEROKU_APP_NAME
+      - run:
+          name: database setup
+          command: heroku run bundle exec rake db:migrate RAILS_ENV=production -a $HEROKU_APP_NAME
+      - run: gem install bundler -v '2.1.4'
+      - run: bundle config set deployment 'true'
+      - run: bundle install --jobs=3 --retry=3 --path=/tmp/vendor/bundle
+      - run:
+          name: Run test
+          command: 'ruby test_sum.rb'
+
 workflows:
-  say-hello-workflow:
+  version: 2
+  build_test_and_deploy:
     jobs:
-      - say-hello
+      - build
+      - test:
+          requires:
+            - build
+      - deploy:
+          requires:
+            - test
+          filters:
+            branches:
+              only: main
+commands:
+  ruby-deps:
+    description: "Runs specialized Ruby cache steps."
+    parameters:
+      dir:
+        description: |
+          The directory relative to the root of the repo to run bundle for.
+          Leave empty for root directory.
+        type: string
+        default: ""
+    steps:
+      - restore_cache:
+          keys: circleci-cache-v2-{{ .Branch }}-<< parameters.dir >>-{{ checksum "Gemfile.lock" }}
+      - run:
+          name: Install Ruby dependencies
+          command:
+            |
+            if [[ "<< parameters.dir >>" != "" ]]; then
+              cd << parameters.dir >>
+            fi
+            #cmake is needed fo rugged, a gem dependency
+            sudo apt-get update && sudo apt-get install -y cmake
+            bundle check --path=vendor/bundle || bundle install --path=vendor/bundle --jobs=4 --retry=3
+      # - run: yarn --frozen-lockfile
+      - save_cache:
+          key: v1-dependencies-{{ checksum "Gemfile.lock" }}-{{ checksum "yarn.lock" }}
+          paths:
+            - "vendor/bundle"
+            - - node_modules
+  set-jekyll-basename:
+    description: Set JEKYLL_BASENAME env var and persist in $BASH_ENV
+    steps:
+      - run:
+          name: Populate JEKYLL_BASENAME env var
+          command: |
+            if [ ${CIRCLE_BRANCH} = master -o ${CIRCLE_BRANCH} = main -o ${CIRCLE_BRANCH} = /.*-preview/ ]; then
+              echo "export JEKYLL_BASENAME=docs" >> $BASH_ENV;
+            else
+              echo "export JEKYLL_BASENAME=${CIRCLE_BRANCH}" >> $BASH_ENV;
+            fiz
+            
+  remove-unnecessary: # 不要なファイル群を削除 
+    steps:
+      - run: sudo rm -rf /Library/Developer/CoreSimulator/Profiles/Runtimes/
