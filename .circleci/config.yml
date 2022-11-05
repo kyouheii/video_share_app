@@ -142,7 +142,7 @@ commands:
             bundle check --path=vendor/bundle || bundle install --path=vendor/bundle --jobs=4 --retry=3
       # - run: yarn --frozen-lockfile
       - save_cache:
-          key: bundle-{{ checksum "Gemfile.lock" }}
+          key: v1-dependencies-{{ checksum "Gemfile.lock" }}-{{ checksum "yarn.lock" }}
           paths:
             - "vendor/bundle"
             - - node_modules
