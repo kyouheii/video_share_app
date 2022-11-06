@@ -15,7 +15,7 @@ jobs:
       - restore_cache:
           name: Restore Gem Package Cache
           keys:
-            v1-hoge-{{ .Branch }}-{{ checksum "yarn.lock" }}
+            v1-hoge-{{ .Branch }}-{{ checksum "yarn.lock" }
       - run:
           name: Run jest tests
           command: |
