@@ -15,7 +15,7 @@ jobs:
       - restore_cache:
           name: Restore Gem Package Cache
           keys:
-            v1-dependencies-{{ checksum "Gemfile.lock" }}-{{ checksum "yarn.lock" }}
+            v1-hoge-{{ .Branch }}-{{ checksum "yarn.lock" }}
       - run:
           name: Run jest tests
           command: |
@@ -24,7 +24,7 @@ jobs:
           name: Save Gem Package Cache
           paths:
             - ./vendor/bundle
-          key: gem-v1-{{ arch }}-{{ checksum "Gemfile.lock" }}
+          key: v1-hoge-{{ .Branch }}-{{ checksum "yarn.lock" }}
   jobs:
     rspec:
     parallelism: 3
@@ -142,7 +142,7 @@ commands:
             bundle check --path=vendor/bundle || bundle install --path=vendor/bundle --jobs=4 --retry=3
       # - run: yarn --frozen-lockfile
       - save_cache:
-          key: v1-dependencies-{{ checksum "Gemfile.lock" }}-{{ checksum "yarn.lock" }}
+          key: v1-hoge-{{ .Branch }}-{{ checksum "yarn.lock" }}
           paths:
             - "vendor/bundle"
             - - node_modules
