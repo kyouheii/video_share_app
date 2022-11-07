@@ -51,7 +51,7 @@ jobs:
           key: source-v1-{{ .Branch }}-{{ .Revision }}
             # v1-bundle-{{ checksum "Gemfile.lock" }}
           paths:
-            - ~/circleci-demo-workflows/vendor/bundle
+            # - ~/circleci-demo-workflows/vendor/bundle
     
   test:
     docker:
