@@ -14,8 +14,8 @@ jobs:
                 # - ruby/install-deps
       - restore_cache:
           name: Restore Gem Package Cache
-          keys:
-            v1-hoge-{{ .Branch }}-{{ checksum "yarn.lock" }
+          keys: source-v1-{{ .Branch }}-{{ .Revision }}
+            # v1-hoge-{{ .Branch }}-{{ checksum "yarn.lock" }
       - run:
           name: Run jest tests
           command: |
@@ -24,7 +24,8 @@ jobs:
           name: Save Gem Package Cache
           paths:
             - ./vendor/bundle
-          key: v1-hoge-{{ .Branch }}-{{ checksum "yarn.lock" }}
+          key:  source-v1-{{ .Branch }}-{{ .Revision }}
+            # v1-hoge-{{ .Branch }}-{{ checksum "yarn.lock" }}
   jobs:
     rspec:
     parallelism: 3
@@ -51,7 +52,7 @@ jobs:
           key: source-v1-{{ .Branch }}-{{ .Revision }}
             # v1-bundle-{{ checksum "Gemfile.lock" }}
           paths:
-            # - ~/circleci-demo-workflows/vendor/bundle
+            - ~/circleci-demo-workflows/vendor/bundle
     
   test:
     docker:
