@@ -41,14 +41,14 @@ jobs:
     steps:
       - checkout
       - restore_cache:
-          gems_cache_key: &gems_cache_key v1-gems-{{ checksum "Gemfile.lock" }}
+          gems_cache_key: &gems_cache_key v1-gems-{{ checksum "/Gemfile.lock" }}
       - run:
           name: install dependencies
           command: |
             gem install bundler -v 2.0.2
             bundle install --jobs=4 --retry=3 --path vendor/bundle
       - save_cache:
-          gems_cache_key: &gems_cache_key v1-gems-{{ checksum "Gemfile.lock" }}
+          gems_cache_key: &gems_cache_key v1-gems-{{ checksum "/Gemfile.lock" }}
           paths:
             - ~/circleci-demo-workflows/vendor/bundle
     
@@ -130,7 +130,7 @@ commands:
         default: ""
     steps:
       - restore_cache:
-          gems_cache_key: &gems_cache_key v1-gems-{{ checksum "Gemfile.lock" }}
+          gems_cache_key: &gems_cache_key v1-gems-{{ checksum "/Gemfile.lock" }}
       - run:
           name: Install Ruby dependencies
           command:
