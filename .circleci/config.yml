@@ -97,7 +97,7 @@ jobs:
       - run:
           name: database setup
           command: heroku run bundle exec rake db:migrate RAILS_ENV=production -a $HEROKU_APP_NAME
-      - run: gem install bundler -v '2.1.4'
+      # - run: gem install bundler -v '2.1.4'
       - run: bundle config set deployment 'true'
       - run: bundle install --jobs=3 --retry=3 --path=/tmp/vendor/bundle
       - run:
