@@ -19,7 +19,7 @@ jobs:
       - run:
           name: Run jest tests
           command: |
-             gem install bundler
+             gem install bundle
       - save_cache:
           name: Save Gem Package Cache
           paths:
