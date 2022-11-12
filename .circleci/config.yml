@@ -41,7 +41,8 @@ jobs:
     steps:
       - checkout
       - restore_cache:
-          gems_cache_key: &gems_cache_key v1-gems-{{ checksum "/Gemfile.lock" }}
+          key: -rails-{{ checksum "Gemfile.lock" }}
+            # &gems_cache_key v1-gems-{{ checksum "/Gemfile.lock" }}
       - run:
           name: install dependencies
           command: |
