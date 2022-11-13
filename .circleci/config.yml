@@ -26,6 +26,7 @@ jobs:
             - ./vendor/bundle
           key:  source-v1-{{ .Branch }}-{{ .Revision }}
             # v1-hoge-{{ .Branch }}-{{ checksum "yarn.lock" }}
+            
   jobs:
     rspec:
     parallelism: 3
