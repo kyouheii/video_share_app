@@ -28,6 +28,8 @@ jobs:
             # v1-hoge-{{ .Branch }}-{{ checksum "yarn.lock" }}
             
   jobs:
+    build:
+      working_directory:  ~/video_share_app
     rspec:
     parallelism: 3
     docker:
