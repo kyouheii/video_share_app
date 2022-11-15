@@ -14,7 +14,7 @@ jobs:
                 # - ruby/install-deps
       - restore_cache:
           name: Restore Gem Package Cache
-          keys: - gem-cache-v1-{{ arch }}-{{ .Ci }}-{{ checksum "Gemfile.lock" }}
+          keys: -gem-cache-v1-{{ arch }}-{{ .Ci }}-{{ checksum "Gemfile.lock" }}
             # v1-hoge-{{ .Branch }}-{{ checksum "yarn.lock" }
       - run:
           name: Run jest tests
